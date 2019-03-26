@@ -28,19 +28,19 @@ def hello():
     members = Member.query.all()
     responseA =[]
     for m in members:
-        responseA.append("%s" % m)
+        responseA.append(m.to_dict())
     courses = Course.query.all()
     responseB =[]
     for c in courses:
-        responseB.append("%s" % c)
+        responseB.append(c.to_dict())
         
-    return jsonify(responseA)
-    return jsonify(responseB)
+    return jsonify(responseA, responseB)
+    
 # Add a Course     - /courses/add  -  POST    
 @app.route('/courses/add', methods=['POST'])
 def addCourses():
     info = request.get_json() or {}
-    course = Course(name=info['name'], )
+    course = Course(name=info['name'])
     db.session.add(course)
     db.session.commit()
     return jsonify({'response': 'Ok'}) 
@@ -69,24 +69,16 @@ def showCourses():
 # [GET] /courses/:int - Show a specific Course, including the list of Students.
 @app.route('/courses/<int:id>', methods=['GET'])
 def getCoursewithStudents(id):
+    ele = Course.query.get(id)
+    cour = ele.to_dict()
     if id > 0:
-        print(Course["id"])
-        for i in Course["id"]:
-            if id == i["id"]:
-                ele = copy.deepcopy(i)
-                print(ele)
-                x = ele["students"]
-                tempList = []
-                for n in x:
-                    tempList.append(getElem(n))
-                ele["students"] = tempList
-                
-                return jsonify({"status_code": 200, "data": ele})
-    
             
-        response = jsonify({"error": 400, "message":"no member found" })
-        response.status_code = 400
-        return response
+        return jsonify({"status_code": 200, "data": cour})
+        
+    
+    response = jsonify({"error": 400, "message":"no member found" })
+    response.status_code = 400
+    return response
 
     
     
@@ -106,27 +98,34 @@ def showStudents():
 
 
 # [GET] /students/:int - Show a specific Student, including the Course information (object)
-@app.route('/student/<int:id>', methods=['GET'])
+@app.route('/students/<int:id>', methods=['GET', 'PUT'])
 def getStudentwithCourses(id):
-    if id > 0:
-        print(Member["id"])
-        for i in Member["id"]:
-            if id == i["id"]:
-                ele = copy.deepcopy(i)
-                print(ele)
-                x = ele["course_id"]
-                tempList = []
-                for n in x:
-                    tempList.append(getElement(n))
-                ele["course_id"] = tempList
+    if request.method == 'GET':
+        
+        ele = Member.query.get(id)
+        stud = ele.to_dict()
+        if id > 0:
                 
-                return jsonify({"status_code": 200, "data": ele})
-    
-            
+            return jsonify({"status_code": 200, "data": stud})
+                
         response = jsonify({"error": 400, "message":"no member found" })
         response.status_code = 400
         return response    
-
+    
+# [PUT] /students/:int - Change a specific Student to a different Course    
+    else:
+        
+        info = request.get_json() or {}
+        ele = Member.query.get(id)
+        ele.course_id = info['course_id']
+        db.session.commit()
+        
+        
+        return jsonify({"status_code": 200, "data": ele.to_dict()})
+    
+    response = jsonify({"error": 400, "message":"no member found" })
+    response.status_code = 400
+    return response
 
 
 
